@@ -251,8 +251,24 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
             nextFieldId=next_field["id"]
         )
     else:
-        # All fields completed
+        # All fields completed - update status and save completed document
         db.update_document_status(document_id, "completed")
+        
+        # Generate and save completed document to storage
+        try:
+            original_file_data = db.download_file(
+                document_service.bucket_original,
+                f"{document_id}/original.docx"
+            )
+            completed_doc = document_service.generate_completed_document(
+                document_id,
+                original_file_data
+            )
+            await document_service.upload_completed_document(document_id, completed_doc)
+            print(f"✓ Saved completed document for {document_id}")
+        except Exception as e:
+            print(f"⚠ Warning: Failed to save completed document: {e}")
+            # Don't fail the request, just log the warning
 
         return FieldSubmitResponse(
             success=True,
@@ -280,17 +296,32 @@ async def download_document(document_id: str):
         raise HTTPException(status_code=404, detail="Document not found")
 
     try:
-        # Get original file from storage
-        original_file_data = db.download_file(
-            document_service.bucket_original,
-            f"{document_id}/original.docx"
-        )
-
-        # Generate completed document
-        completed_doc = document_service.generate_completed_document(
-            document_id,
-            original_file_data
-        )
+        completed_file_path = f"{document_id}/completed.docx"
+        
+        # Try to get completed document from storage first
+        try:
+            completed_doc = db.download_file(
+                document_service.bucket_completed,
+                completed_file_path
+            )
+            print(f"✓ Serving completed document from storage for {document_id}")
+        except Exception:
+            # Completed document not found in storage, generate it on-demand
+            print(f"⚠ Completed document not in storage for {document_id}, generating on-demand...")
+            original_file_data = db.download_file(
+                document_service.bucket_original,
+                f"{document_id}/original.docx"
+            )
+            completed_doc = document_service.generate_completed_document(
+                document_id,
+                original_file_data
+            )
+            # Try to save it for future use (non-blocking)
+            try:
+                await document_service.upload_completed_document(document_id, completed_doc)
+                print(f"✓ Saved completed document for future use: {document_id}")
+            except Exception as e:
+                print(f"⚠ Warning: Failed to save completed document: {e}")
 
         # Return as downloadable file
         return StreamingResponse(

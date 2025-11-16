@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.env.local
+*.docx
+test_*.py
+check_*.py
+list_*.py
+*.sql
+Postmoney_Safe_*.docx
+.pytest_cache/
+.coverage
+htmlcov/
+

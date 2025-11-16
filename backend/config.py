@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # Application Configuration
     APP_NAME: str = "LegalDoc Filler Backend"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
+    DEBUG: bool = False  # Default to False for production, override with env var
     ALLOWED_ORIGINS: str = "http://localhost:3000"
 
     # File Upload Configuration

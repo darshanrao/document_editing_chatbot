@@ -66,4 +66,23 @@ Once running, visit:
 
 ## Deployment
 
-See main README.md for deployment instructions.
+### Railway (Recommended)
+
+See [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) for detailed Railway deployment instructions.
+
+Quick steps:
+1. Push code to GitHub
+2. Create new project in Railway
+3. Connect GitHub repo
+4. Set environment variables
+5. Deploy!
+
+### Other Platforms
+
+The backend can also be deployed to:
+- Render
+- Fly.io
+- Heroku
+- AWS/GCP/Azure
+
+See main README.md for general deployment guidance.
