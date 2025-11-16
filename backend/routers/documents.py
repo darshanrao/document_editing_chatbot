@@ -189,22 +189,14 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
         # Add clarification to memory
         clarification_msg = AIMessage(content=clarification)
         memory.chat_memory.add_message(clarification_msg)
-        # Save immediately
-        conversation_service.save_single_message_to_db(db, document_id, clarification_msg, "ai")
+        # Save immediately with field_id
+        conversation_service.save_single_message_to_db(db, document_id, clarification_msg, "ai", field["id"])
 
         # Update validation attempts
         validation_attempts = field.get("validation_attempts", 0) + 1
         db.client.table("fields").update({
             "validation_attempts": validation_attempts
         }).eq("id", request.fieldId).execute()
-
-        # Store in chat history
-        db.create_chat_message(
-            document_id=document_id,
-            role="bot",
-            content=clarification,
-            field_id=field["id"]
-        )
 
         # Return clarification as next question (same field)
         return FieldSubmitResponse(
@@ -250,16 +242,8 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
         # Add to memory
         next_question_msg = AIMessage(content=next_question)
         memory.chat_memory.add_message(next_question_msg)
-        # Save immediately
-        conversation_service.save_single_message_to_db(db, document_id, next_question_msg, "ai")
-
-        # Store in chat history
-        db.create_chat_message(
-            document_id=document_id,
-            role="bot",
-            content=next_question,
-            field_id=next_field["id"]
-        )
+        # Save immediately with field_id
+        conversation_service.save_single_message_to_db(db, document_id, next_question_msg, "ai", next_field["id"])
 
         return FieldSubmitResponse(
             success=True,

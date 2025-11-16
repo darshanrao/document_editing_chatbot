@@ -286,7 +286,7 @@ Be warm and encouraging. Don't be robotic. Generate ONLY the clarification messa
             print(f"Error generating clarification: {e}")
             return f"I need {field_type} for {field_name}. {error_message} Please try again."
 
-    def save_single_message_to_db(self, db, document_id: str, message, message_type: str):
+    def save_single_message_to_db(self, db, document_id: str, message, message_type: str, field_id: Optional[str] = None):
         """Save a single message to Supabase, avoiding duplicates"""
         try:
             # Check if message already exists to avoid duplicates
@@ -308,6 +308,7 @@ Be warm and encouraging. Don't be robotic. Generate ONLY the clarification messa
                 "session_id": document_id,
                 "message_type": message_type,
                 "content": message.content,
+                "field_id": field_id,
                 "metadata": {}
             }).execute()
         except Exception as e:

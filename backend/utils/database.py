@@ -96,26 +96,28 @@ class Database:
         result = self.client.table("fields").select("*").eq("document_id", document_id).eq("status", "pending").order("order").limit(1).execute()
         return result.data[0] if result.data else None
 
-    # Chat message operations
-    def create_chat_message(self, document_id: str, role: str, content: str,
-                           field_id: Optional[str] = None) -> Dict[str, Any]:
-        """Create a new chat message"""
-        message_id = str(uuid.uuid4())
-        data = {
-            "id": message_id,
-            "document_id": document_id,
-            "role": role,
-            "content": content,
-            "field_id": field_id,
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-        result = self.client.table("chat_messages").insert(data).execute()
-        return result.data[0] if result.data else None
-
+    # Chat message operations (now using conversation_memory)
     def get_chat_messages(self, document_id: str) -> List[Dict[str, Any]]:
-        """Get all chat messages for a document"""
-        result = self.client.table("chat_messages").select("*").eq("document_id", document_id).order("timestamp").execute()
-        return result.data if result.data else []
+        """Get all chat messages for a document from conversation_memory"""
+        result = self.client.table("conversation_memory")\
+            .select("*")\
+            .eq("document_id", document_id)\
+            .order("created_at")\
+            .execute()
+        
+        # Map message_type to role for frontend compatibility
+        messages = []
+        for record in (result.data if result.data else []):
+            messages.append({
+                "id": record["id"],
+                "document_id": record["document_id"],
+                "role": "user" if record["message_type"] == "human" else "bot",  # Map to frontend format
+                "content": record["content"],
+                "field_id": record.get("field_id"),
+                "timestamp": record["created_at"]  # Use created_at as timestamp
+            })
+        
+        return messages
 
     # Processing task operations
     def create_processing_task(self, document_id: str, task_type: str) -> Dict[str, Any]:
