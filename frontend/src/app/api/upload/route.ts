@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createMockDocument } from '@/lib/mockDb';
+import { config } from '@/lib/config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,12 +21,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create mock document
-    const document = createMockDocument(file.name);
+    // Forward the request to the backend API
+    const backendFormData = new FormData();
+    backendFormData.append('file', file);
+
+    const response = await fetch(`${config.api.baseUrl}/upload`, {
+      method: 'POST',
+      body: backendFormData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(
+        { error: error.detail || 'Failed to upload file' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
 
     return NextResponse.json({
-      documentId: document.id,
-      status: document.status,
+      documentId: data.document_id,
+      status: data.status,
     });
   } catch (error) {
     console.error('Upload error:', error);

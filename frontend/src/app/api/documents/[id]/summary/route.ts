@@ -1,36 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocument } from '@/lib/mockDb';
-import { FieldStatus } from '@/types';
+import { config } from '@/lib/config';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const document = getDocument(id);
 
-  if (!document) {
+  try {
+    const response = await fetch(`${config.api.baseUrl}/documents/${id}/summary`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(
+        { error: error.detail || 'Document not found' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+
+    return NextResponse.json({
+      filename: data.filename,
+      fieldsCompleted: data.fieldsCompleted,
+      totalFields: data.totalFields,
+      completionTime: data.completionTime,
+    });
+  } catch (error) {
+    console.error('Summary error:', error);
     return NextResponse.json(
-      { error: 'Document not found' },
-      { status: 404 }
+      { error: 'Failed to fetch summary' },
+      { status: 500 }
     );
   }
-
-  const fieldsCompleted = document.fields.filter(f => f.status === FieldStatus.FILLED).length;
-  const totalFields = document.fields.length;
-
-  // Calculate completion time
-  const createdAt = new Date(document.createdAt);
-  const completedAt = document.completedAt ? new Date(document.completedAt) : new Date();
-  const diffMs = completedAt.getTime() - createdAt.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffSeconds = Math.floor((diffMs % 60000) / 1000);
-  const completionTime = `${diffMinutes} minutes ${diffSeconds} seconds`;
-
-  return NextResponse.json({
-    filename: document.filename,
-    fieldsCompleted,
-    totalFields,
-    completionTime,
-  });
 }

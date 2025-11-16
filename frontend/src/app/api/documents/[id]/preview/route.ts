@@ -1,29 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocument, getDocumentContent } from '@/lib/mockDb';
-import { FieldStatus } from '@/types';
+import { config } from '@/lib/config';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const document = getDocument(id);
 
-  if (!document) {
+  try {
+    const response = await fetch(`${config.api.baseUrl}/documents/${id}/preview`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(
+        { error: error.detail || 'Document not found' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+
+    return NextResponse.json({
+      content: data.content,
+      fields: data.fields,
+      completionPercentage: 0, // Calculate based on fields if needed
+    });
+  } catch (error) {
+    console.error('Preview error:', error);
     return NextResponse.json(
-      { error: 'Document not found' },
-      { status: 404 }
+      { error: 'Failed to fetch preview' },
+      { status: 500 }
     );
   }
-
-  const content = getDocumentContent(id);
-  const completedFields = document.fields.filter(f => f.status === FieldStatus.FILLED).length;
-  const totalFields = document.fields.length;
-  const completionPercentage = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
-
-  return NextResponse.json({
-    content,
-    fields: document.fields,
-    completionPercentage,
-  });
 }

@@ -1,113 +1,69 @@
 # LegalDoc Filler - Backend
 
-FastAPI backend for the LegalDoc Filler application.
+FastAPI backend for the LegalDoc Filler application. This service processes legal documents, extracts placeholders using Google Gemini AI, and provides a conversational interface for filling them in.
 
-## Status
+## Features
 
-🚧 **Under Development** - Backend implementation is planned but not yet started.
+- **Document Processing**: Upload and extract text from .docx files
+- **AI-Powered Placeholder Detection**: Uses Google Gemini to identify and categorize placeholders
+- **Conversational Filling**: Generates natural questions for each field
+- **Real-time Preview**: Live document preview with filled values
+- **Supabase Integration**: PostgreSQL database and file storage
+- **Type Validation**: Validates field values based on type (email, phone, date, etc.)
 
-## Planned Tech Stack
+## Prerequisites
 
-- **Framework**: FastAPI
-- **Language**: Python 3.11+
-- **Database**: PostgreSQL (via Supabase)
-- **Storage**: Supabase Storage
-- **AI**: OpenAI API / Anthropic Claude API
-- **Document Parsing**: python-docx
-- **Authentication**: Supabase Auth
+- Python 3.9+
+- Supabase account (with PostgreSQL database and Storage buckets)
+- Google Gemini API key
 
-## Planned Features
+## Setup
 
-### Core Functionality
-- Document upload and parsing
-- Placeholder identification using AI
-- Conversational AI for field filling
-- Document generation with filled values
-- Email delivery
-
-### API Endpoints (Planned)
-
-```
-POST   /api/v1/upload              # Upload document
-GET    /api/v1/documents/{id}      # Get document details
-GET    /api/v1/documents/{id}/status   # Processing status
-GET    /api/v1/documents/{id}/fields   # Get all fields
-POST   /api/v1/documents/{id}/fields   # Update field value
-GET    /api/v1/documents/{id}/preview  # Get preview
-GET    /api/v1/documents/{id}/download # Download filled document
-POST   /api/v1/documents/{id}/email    # Email document
-GET    /api/v1/chat/{id}/next          # Get next AI question
-```
-
-## Setup (Coming Soon)
+### 1. Install Dependencies
 
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+cd backend
 pip install -r requirements.txt
+```
 
-# Set up environment variables
+### 2. Configure Supabase
+
+1. Create a new Supabase project at https://supabase.com
+2. Run the SQL in `database_init.sql` in your Supabase SQL Editor to create tables
+3. Create two storage buckets in Supabase Storage:
+   - `original-documents` (private)
+   - `completed-documents` (private)
+
+### 3. Get Google Gemini API Key
+
+1. Go to https://makersuite.google.com/app/apikey
+2. Create a new API key
+3. Copy the API key
+
+### 4. Configure Environment Variables
+
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
 cp .env.example .env
-# Edit .env with your credentials
-
-# Run migrations
-alembic upgrade head
-
-# Start development server
-uvicorn app.main:app --reload --port 8000
 ```
 
-## Environment Variables (Planned)
+## Running the Server
 
-```env
-# Database
-DATABASE_URL=postgresql://...
-SUPABASE_URL=...
-SUPABASE_KEY=...
+### Development
 
-# AI Service
-OPENAI_API_KEY=...
-# or
-ANTHROPIC_API_KEY=...
-
-# Email
-SENDGRID_API_KEY=...
-
-# CORS
-FRONTEND_URL=http://localhost:3000
+```bash
+python main.py
 ```
 
-## Project Structure (Planned)
+The API will be available at `http://localhost:8000`
 
-```
-backend/
-├── app/
-│   ├── main.py           # FastAPI app
-│   ├── api/              # API routes
-│   │   ├── v1/
-│   │   │   ├── upload.py
-│   │   │   ├── documents.py
-│   │   │   └── chat.py
-│   ├── core/             # Core functionality
-│   │   ├── config.py
-│   │   ├── security.py
-│   │   └── ai.py
-│   ├── models/           # Database models
-│   ├── schemas/          # Pydantic schemas
-│   ├── services/         # Business logic
-│   │   ├── document_parser.py
-│   │   ├── ai_service.py
-│   │   └── storage.py
-│   └── db/               # Database config
-├── tests/
-├── alembic/              # DB migrations
-├── requirements.txt
-└── README.md
-```
+## API Documentation
 
-## Contributing
+Once running, visit:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
-Backend implementation is coming soon. Check the main README for project status.
+## Deployment
+
+See main README.md for deployment instructions.

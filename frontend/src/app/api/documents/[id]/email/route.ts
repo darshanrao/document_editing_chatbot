@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocument } from '@/lib/mockDb';
+import { config } from '@/lib/config';
 
 export async function POST(
   request: NextRequest,
@@ -7,15 +7,6 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const document = getDocument(id);
-
-    if (!document) {
-      return NextResponse.json(
-        { error: 'Document not found' },
-        { status: 404 }
-      );
-    }
-
     const body = await request.json();
     const { email } = body;
 
@@ -26,12 +17,27 @@ export async function POST(
       );
     }
 
-    // In a real implementation, you would send an email here
-    console.log(`Sending document ${document.id} to ${email}`);
+    const response = await fetch(`${config.api.baseUrl}/documents/${id}/email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(
+        { error: error.detail || 'Failed to send email' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
 
     return NextResponse.json({
-      success: true,
-      message: 'Document sent successfully',
+      success: data.success,
+      message: data.message,
     });
   } catch (error) {
     console.error('Error sending email:', error);

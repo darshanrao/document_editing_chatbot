@@ -1,24 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocument, updateFieldValue, getNextPendingField } from '@/lib/mockDb';
+import { config } from '@/lib/config';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const document = getDocument(id);
 
-  if (!document) {
+  try {
+    const response = await fetch(`${config.api.baseUrl}/documents/${id}/fields`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(
+        { error: error.detail || 'Document not found' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+
+    return NextResponse.json({
+      fields: data.fields,
+      filename: data.filename,
+    });
+  } catch (error) {
+    console.error('Fields error:', error);
     return NextResponse.json(
-      { error: 'Document not found' },
-      { status: 404 }
+      { error: 'Failed to fetch fields' },
+      { status: 500 }
     );
   }
-
-  return NextResponse.json({
-    fields: document.fields,
-    filename: document.filename,
-  });
 }
 
 export async function POST(
@@ -37,31 +54,29 @@ export async function POST(
       );
     }
 
-    const success = updateFieldValue(id, fieldId, value);
+    const response = await fetch(`${config.api.baseUrl}/documents/${id}/fields`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fieldId, value }),
+    });
 
-    if (!success) {
+    if (!response.ok) {
+      const error = await response.json();
       return NextResponse.json(
-        { error: 'Failed to update field' },
-        { status: 500 }
+        { error: error.detail || 'Failed to update field' },
+        { status: response.status }
       );
     }
 
-    // Get next pending field
-    const nextField = getNextPendingField(id);
+    const data = await response.json();
 
-    if (nextField) {
-      return NextResponse.json({
-        success: true,
-        nextQuestion: `Great! Now, what is the ${nextField.name}?`,
-        nextFieldId: nextField.id,
-      });
-    } else {
-      return NextResponse.json({
-        success: true,
-        nextQuestion: null,
-        nextFieldId: null,
-      });
-    }
+    return NextResponse.json({
+      success: data.success,
+      nextQuestion: data.nextQuestion,
+      nextFieldId: data.nextFieldId,
+    });
   } catch (error) {
     console.error('Error updating field:', error);
     return NextResponse.json(
