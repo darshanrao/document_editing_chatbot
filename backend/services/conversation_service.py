@@ -286,21 +286,32 @@ Be warm and encouraging. Don't be robotic. Generate ONLY the clarification messa
             print(f"Error generating clarification: {e}")
             return f"I need {field_type} for {field_name}. {error_message} Please try again."
 
-    def save_memory_to_db(self, db, document_id: str, memory: ConversationBufferMemory):
-        """Save conversation memory to Supabase"""
+    def save_single_message_to_db(self, db, document_id: str, message, message_type: str):
+        """Save a single message to Supabase, avoiding duplicates"""
         try:
-            for message in memory.chat_memory.messages:
-                message_type = "human" if isinstance(message, HumanMessage) else "ai"
-
-                db.client.table("conversation_memory").insert({
-                    "document_id": document_id,
-                    "session_id": document_id,
-                    "message_type": message_type,
-                    "content": message.content,
-                    "metadata": {}
-                }).execute()
+            # Check if message already exists to avoid duplicates
+            existing = db.client.table("conversation_memory")\
+                .select("id")\
+                .eq("document_id", document_id)\
+                .eq("content", message.content)\
+                .eq("message_type", message_type)\
+                .order("created_at", desc=True)\
+                .limit(1)\
+                .execute()
+            
+            if existing.data:
+                return  # Message already exists, skip
+            
+            # Insert new message
+            db.client.table("conversation_memory").insert({
+                "document_id": document_id,
+                "session_id": document_id,
+                "message_type": message_type,
+                "content": message.content,
+                "metadata": {}
+            }).execute()
         except Exception as e:
-            print(f"Error saving memory to DB: {e}")
+            print(f"Error saving message to DB: {e}")
 
     def load_memory_from_db(self, db, document_id: str) -> ConversationBufferMemory:
         """Load conversation memory from Supabase"""

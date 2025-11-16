@@ -46,10 +46,10 @@ async def get_next_question(document_id: str):
 
     # Add AI message to memory
     from langchain.schema import AIMessage
-    memory.chat_memory.add_message(AIMessage(content=question))
-
-    # Save updated memory to database
-    conversation_service.save_memory_to_db(db, document_id, memory)
+    ai_msg = AIMessage(content=question)
+    memory.chat_memory.add_message(ai_msg)
+    # Save immediately
+    conversation_service.save_single_message_to_db(db, document_id, ai_msg, "ai")
 
     # Store the bot message in chat history (for backward compatibility)
     db.create_chat_message(

@@ -162,7 +162,10 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
     memory = conversation_service.load_memory_from_db(db, document_id)
 
     # Add user's response to memory
-    memory.chat_memory.add_message(HumanMessage(content=request.value))
+    user_msg = HumanMessage(content=request.value)
+    memory.chat_memory.add_message(user_msg)
+    # Save immediately
+    conversation_service.save_single_message_to_db(db, document_id, user_msg, "human")
 
     # Extract and validate value from natural language response
     is_valid, extracted_value, error_message = conversation_service.extract_and_validate_value(
@@ -184,16 +187,16 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
         )
 
         # Add clarification to memory
-        memory.chat_memory.add_message(AIMessage(content=clarification))
+        clarification_msg = AIMessage(content=clarification)
+        memory.chat_memory.add_message(clarification_msg)
+        # Save immediately
+        conversation_service.save_single_message_to_db(db, document_id, clarification_msg, "ai")
 
         # Update validation attempts
         validation_attempts = field.get("validation_attempts", 0) + 1
         db.client.table("fields").update({
             "validation_attempts": validation_attempts
         }).eq("id", request.fieldId).execute()
-
-        # Save memory
-        conversation_service.save_memory_to_db(db, document_id, memory)
 
         # Store in chat history
         db.create_chat_message(
@@ -222,9 +225,6 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
     if document["status"] == "ready":
         db.update_document_status(document_id, "filling")
 
-    # Save memory
-    conversation_service.save_memory_to_db(db, document_id, memory)
-
     # Get next pending field
     next_field = db.get_next_pending_field(document_id)
 
@@ -248,8 +248,10 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
         )
 
         # Add to memory
-        memory.chat_memory.add_message(AIMessage(content=next_question))
-        conversation_service.save_memory_to_db(db, document_id, memory)
+        next_question_msg = AIMessage(content=next_question)
+        memory.chat_memory.add_message(next_question_msg)
+        # Save immediately
+        conversation_service.save_single_message_to_db(db, document_id, next_question_msg, "ai")
 
         # Store in chat history
         db.create_chat_message(
