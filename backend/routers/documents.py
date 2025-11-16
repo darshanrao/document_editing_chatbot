@@ -216,6 +216,14 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
         "validation_attempts": 0
     }).eq("id", request.fieldId).execute()
 
+    # Get the updated field with normalized value to return to frontend
+    updated_field_response = db.client.table("fields").select("*").eq("id", request.fieldId).single().execute()
+    updated_field = {
+        "id": updated_field_response.data["id"],
+        "value": updated_field_response.data["value"],
+        "status": "filled"
+    }
+
     # Update document status to filling if it was ready
     if document["status"] == "ready":
         db.update_document_status(document_id, "filling")
@@ -251,7 +259,8 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
         return FieldSubmitResponse(
             success=True,
             nextQuestion=next_question,
-            nextFieldId=next_field["id"]
+            nextFieldId=next_field["id"],
+            updatedField=updated_field
         )
     else:
         # All fields completed - update status and save completed document
@@ -276,7 +285,8 @@ async def submit_field_value(document_id: str, request: FieldSubmitRequest):
         return FieldSubmitResponse(
             success=True,
             nextQuestion=None,
-            nextFieldId=None
+            nextFieldId=None,
+            updatedField=updated_field
         )
 
 

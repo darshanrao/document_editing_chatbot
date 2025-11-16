@@ -139,6 +139,7 @@ class FieldSubmitResponse(BaseModel):
     success: bool
     nextQuestion: Optional[str] = None
     nextFieldId: Optional[str] = None
+    updatedField: Optional[dict] = None  # Contains normalized field value from backend
 
 
 class NextQuestionResponse(BaseModel):

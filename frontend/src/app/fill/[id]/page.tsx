@@ -110,14 +110,23 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
       if (response.ok) {
         const data = await response.json();
 
-        // Update fields
-        setFields(prev =>
-          prev.map(f =>
-            f.id === currentFieldId
-              ? { ...f, value: message, status: FieldStatus.FILLED }
-              : f
-          )
-        );
+        // Update fields with normalized value from backend
+        if (data.updatedField) {
+          setFields(prev =>
+            prev.map(f =>
+              f.id === data.updatedField.id
+                ? { ...f, value: data.updatedField.value, status: FieldStatus.FILLED }
+                : f
+            )
+          );
+
+          // Refresh preview with normalized values
+          const previewRes = await fetch(`/api/documents/${documentId}/preview`);
+          if (previewRes.ok) {
+            const previewData = await previewRes.json();
+            setDocumentContent(previewData.content);
+          }
+        }
 
         // Get next question
         if (data.nextQuestion) {
