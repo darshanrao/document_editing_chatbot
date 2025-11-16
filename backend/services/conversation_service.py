@@ -7,12 +7,20 @@ from langchain.schema import HumanMessage, AIMessage
 from config import settings
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import google.generativeai as genai
+import threading
 
 
 class ConversationService:
     """Manages conversational flow with memory"""
+
+    # In-memory cache for conversation memories
+    # Format: {document_id: {"memory": ConversationBufferMemory, "timestamp": datetime}}
+    _memory_cache: Dict[str, Dict[str, Any]] = {}
+    _cache_lock = threading.Lock()
+    _cache_ttl_minutes = 30  # Cache expires after 30 minutes
+    _sliding_window_size = 20  # Load only last 20 messages for context
 
     def __init__(self):
         # Use Google GenAI directly
@@ -39,6 +47,48 @@ class ConversationService:
             output_key="output"
         )
         return memory
+
+    def _get_cached_memory(self, document_id: str) -> Optional[ConversationBufferMemory]:
+        """Retrieve memory from cache if it exists and hasn't expired"""
+        with self._cache_lock:
+            # Clean up expired entries
+            self._cleanup_expired_cache()
+
+            if document_id in self._memory_cache:
+                cache_entry = self._memory_cache[document_id]
+                expiry_time = cache_entry["timestamp"] + timedelta(minutes=self._cache_ttl_minutes)
+
+                if datetime.now() < expiry_time:
+                    return cache_entry["memory"]
+                else:
+                    # Expired, remove from cache
+                    del self._memory_cache[document_id]
+
+        return None
+
+    def _cache_memory(self, document_id: str, memory: ConversationBufferMemory):
+        """Store memory in cache with current timestamp"""
+        with self._cache_lock:
+            self._memory_cache[document_id] = {
+                "memory": memory,
+                "timestamp": datetime.now()
+            }
+
+    def _cleanup_expired_cache(self):
+        """Remove expired cache entries (called with lock held)"""
+        now = datetime.now()
+        expired_keys = [
+            doc_id for doc_id, entry in self._memory_cache.items()
+            if now >= entry["timestamp"] + timedelta(minutes=self._cache_ttl_minutes)
+        ]
+        for key in expired_keys:
+            del self._memory_cache[key]
+
+    def clear_cache(self, document_id: str):
+        """Clear cache for a specific document (e.g., when document is completed)"""
+        with self._cache_lock:
+            if document_id in self._memory_cache:
+                del self._memory_cache[document_id]
 
     def _build_chat_history_string(self, memory: ConversationBufferMemory) -> str:
         """Convert LangChain memory to string format for Gemini"""
@@ -287,22 +337,27 @@ Be warm and encouraging. Don't be robotic. Generate ONLY the clarification messa
             return f"I need {field_type} for {field_name}. {error_message} Please try again."
 
     def save_single_message_to_db(self, db, document_id: str, message, message_type: str, field_id: Optional[str] = None):
-        """Save a single message to Supabase, avoiding duplicates"""
+        """
+        Save a single message to Supabase and update cache
+
+        Performance optimizations:
+        - Updates cache immediately (fast in-memory operation)
+        - Saves to DB for persistence (1 query instead of 2)
+        - Removed duplicate check (relies on application logic)
+        """
         try:
-            # Check if message already exists to avoid duplicates
-            existing = db.client.table("conversation_memory")\
-                .select("id")\
-                .eq("document_id", document_id)\
-                .eq("content", message.content)\
-                .eq("message_type", message_type)\
-                .order("created_at", desc=True)\
-                .limit(1)\
-                .execute()
-            
-            if existing.data:
-                return  # Message already exists, skip
-            
-            # Insert new message
+            # Update cache immediately
+            cached_memory = self._get_cached_memory(document_id)
+            if cached_memory:
+                # Add message to cached memory
+                if message_type == "human":
+                    cached_memory.chat_memory.add_message(HumanMessage(content=message.content))
+                elif message_type == "ai":
+                    cached_memory.chat_memory.add_message(AIMessage(content=message.content))
+                # Update cache timestamp
+                self._cache_memory(document_id, cached_memory)
+
+            # Insert new message to DB for persistence
             db.client.table("conversation_memory").insert({
                 "document_id": document_id,
                 "session_id": document_id,
@@ -311,21 +366,40 @@ Be warm and encouraging. Don't be robotic. Generate ONLY the clarification messa
                 "field_id": field_id,
                 "metadata": {}
             }).execute()
+
         except Exception as e:
             print(f"Error saving message to DB: {e}")
 
     def load_memory_from_db(self, db, document_id: str) -> ConversationBufferMemory:
-        """Load conversation memory from Supabase"""
+        """
+        Load conversation memory from Supabase with caching and sliding window
+
+        Performance optimizations:
+        - Checks cache first (0 DB queries on cache hit)
+        - Uses sliding window (last 20 messages only)
+        - Caches result for subsequent requests
+        """
+        # Check cache first
+        cached_memory = self._get_cached_memory(document_id)
+        if cached_memory:
+            return cached_memory
+
+        # Cache miss - load from database with sliding window
         memory = self.create_memory(document_id)
 
         try:
+            # Load only the last N messages (sliding window)
             response = db.client.table("conversation_memory")\
                 .select("*")\
                 .eq("document_id", document_id)\
-                .order("created_at")\
+                .order("created_at", desc=True)\
+                .limit(self._sliding_window_size)\
                 .execute()
 
-            for record in response.data:
+            # Reverse to get chronological order
+            records = reversed(response.data)
+
+            for record in records:
                 if record["message_type"] == "human":
                     memory.chat_memory.add_message(HumanMessage(content=record["content"]))
                 elif record["message_type"] == "ai":
@@ -333,6 +407,9 @@ Be warm and encouraging. Don't be robotic. Generate ONLY the clarification messa
 
         except Exception as e:
             print(f"Error loading memory from DB: {e}")
+
+        # Cache the loaded memory
+        self._cache_memory(document_id, memory)
 
         return memory
 
