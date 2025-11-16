@@ -179,46 +179,115 @@ Generate ONLY the question to ask the user, nothing else."""
 
         chat_history = self._build_chat_history_string(memory)
 
-        prompt = f"""You are an intelligent field extraction system. Your job is to extract the EXACT value that should fill in the field from the user's response.
+        prompt = f"""You are an intelligent field extraction and validation system for legal documents.
 
-Field Details:
-- Name: {field_name}
-- Type: {field_type}
-- Placeholder: {placeholder}
+Field to extract: {field_name}
+Field Type: {field_type}
+Placeholder: {placeholder}
 
 Previous conversation:
 {chat_history}
 
-Extraction Rules:
-1. Extract ONLY the value that should replace the placeholder
-2. Clean up the value (remove extra spaces, fix capitalization if needed)
-3. For dates, convert to a standard format (MM/DD/YYYY)
-4. For currency, include the dollar sign if mentioned
-5. For names, ensure proper capitalization
-6. Return ONLY the extracted value, nothing else
+User's response: "{user_response}"
 
-Validation Rules by Type:
-- email: Must contain @ and domain
-- phone: Must contain digits, can have formatting
-- date: Must be a valid date
-- number: Must be numeric
-- name: Must be at least 2 characters
-- text: Any non-empty text
+---
 
-If the response is ambiguous or doesn't contain the required information, respond with: INVALID: <reason>
+EXTRACTION AND VALIDATION RULES BY FIELD TYPE:
 
-Examples:
-User says: "My email is john@example.com"
-You extract: john@example.com
+## AMOUNTS (Purchase Amount, Valuation Cap, currency fields):
+- Convert shorthand: "500k" → "$500,000", "10m" → "$10,000,000", "2.5M" → "$2,500,000"
+- Convert words: "one million" → "$1,000,000", "five hundred thousand" → "$500,000"
+- Convert currency notations: "₹5 lakh" → INVALID: Please provide the amount in USD
+- Default currency is USD unless user specifies otherwise
+- Remove extra spaces, periods (except decimal), commas in input
+- Final format MUST be: $X,XXX,XXX (comma-separated with dollar sign)
+- If meaning is unclear (e.g., "about 200k", "roughly 1M"), return: INVALID: Please provide the exact amount (e.g., Is it exactly $200,000?)
 
-User says: "It's due on December 15, 2024"
-You extract: 12/15/2024
+## DATES:
+- Convert natural language:
+  * "second week of June" → "June 10, 2025" (use Monday of that week, or ask if year unclear)
+  * "mid-July" → "July 15, 2025"
+  * "early March" → "March 1, 2025"
+  * "end of December" → "December 31, 2025"
+- Normalize formats: "10th June", "June 10 2025", "10/06/25", "6-10-25" → "June 10, 2025"
+- Strict output format: Month DD, YYYY (e.g., "January 15, 2025")
+- If vague ("sometime in October", "Q2 2025"), return: INVALID: Please provide a specific date
 
-User says: "I don't know"
-You respond: INVALID: User did not provide a value
+## JURISDICTION / STATE OF INCORPORATION:
+- Correct misspellings: "Texes" → "Texas, USA", "Californya" → "California, USA"
+- Add default country: "Delaware" → "Delaware, USA"
+- If ambiguous location, return: INVALID: Do you mean [Location], USA or [Location] (the country)?
+  Example: "Georgia" → INVALID: Do you mean Georgia, USA or Georgia (the country)?
+- Output format: [State/Province], [Country]
 
-Now extract from this user response: "{user_response}"
-"""
+## ADDRESSES:
+- Expand abbreviations: "sf" → "San Francisco", "NYC" → "New York City"
+- Fix capitalization: "123 main st" → "123 Main St"
+- Remove emojis or irrelevant text
+- Ensure complete format: Street, City, State/Province, Country, ZIP
+- If missing key parts (city, state, zip), return: INVALID: Please provide the complete address including [missing part]
+
+## COMPANY NAME:
+- Capitalize properly: "acme inc" → "Acme Inc.", "google llc" → "Google LLC"
+- Fix spacing: "Test  Company" → "Test Company"
+- If user provides only partial name (e.g., "Acme"), return: INVALID: Is the legal entity name "Acme, Inc.", "Acme LLC", or something else?
+- Keep legal suffixes: Inc., LLC, Corp., Ltd., etc.
+
+## INVESTOR NAME:
+- Capitalize properly: "john smith" → "John Smith"
+- Remove unnecessary punctuation and emojis
+- If company investor, apply company name rules
+- Format: First Last for individuals, Legal Name for entities
+
+## EMAIL:
+- Extract email address
+- Validate format (must have @ and domain)
+- Convert to lowercase: "John@Example.COM" → "john@example.com"
+
+## PHONE:
+- Extract digits and formatting
+- Accept various formats: (555) 123-4567, 555-123-4567, 5551234567
+- Preserve formatting user provides
+- Must have at least 10 digits
+
+## TEXT / GENERAL:
+- Extract relevant information
+- Fix capitalization if appropriate
+- Remove extra spaces and line breaks
+- Minimum 2 characters
+
+---
+
+SPECIAL BEHAVIOR RULES:
+
+1. Extract from full sentences:
+   User: "We invested around 500k last year" → Extract: "$500,000"
+
+2. Auto-fix spelling (unless ambiguous):
+   User: "Californya" → Extract: "California, USA"
+
+3. If multiple interpretations possible, ALWAYS ask for clarification:
+   User: "200k" for a date field → INVALID: Did you mean $200,000 or a date?
+
+4. NEVER return both clarification AND value - it's one or the other
+
+5. Detect refusals and deferrals - return INVALID:
+   - "I don't know" → INVALID: Please provide the {field_name} when you have it
+   - "Skip this" → INVALID: This field is required, please provide the {field_name}
+   - "TBD" / "N/A" / "Unknown" → INVALID: Please provide an actual value for {field_name}
+   - "I'll get back to you" → INVALID: Please provide the {field_name} to continue
+
+6. Extract ONLY the relevant variable from the response, ignore surrounding text
+
+---
+
+OUTPUT INSTRUCTIONS:
+
+Return ONLY one of these two formats:
+1. The extracted and normalized value (following field type rules above)
+2. INVALID: <your clarification question to the user>
+
+Do NOT include explanations, do NOT return both value and question."""
 
         try:
             # Use PRO model for critical extraction task (more accurate)
