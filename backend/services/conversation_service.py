@@ -25,7 +25,7 @@ class ConversationService:
         )
 
         # Pro model for extraction (more accurate, critical task)
-        self.extraction_model = genai.GenerativeModel('gemini-2.5-pro')
+        self.extraction_model = genai.GenerativeModel('gemini-2.5-flash')
         self.extraction_config = genai.types.GenerationConfig(
             temperature=0.1,  # Very precise for extraction
         )

@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     # Google Gemini AI Configuration
     GEMINI_API_KEY: str
 
+    # Email Configuration (Resend)
+    RESEND_API_KEY: str = ""  # Read from .env - leave empty if email not configured
+    FROM_EMAIL: str = ""  # Read from .env - e.g., "LegalDoc Filler <noreply@yourdomain.com>" or "onboarding@resend.dev"
+
     # Application Configuration
     APP_NAME: str = "LegalDoc Filler Backend"
     APP_VERSION: str = "1.0.0"

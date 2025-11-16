@@ -6,8 +6,10 @@ mammoth
 supabase==2.0.3
 google-generativeai
 python-dotenv==1.0.0
-pydantic==2.5.0
+pydantic==2.9.2
 pydantic-settings==2.1.0
-langchain==0.1.0
-langchain-google-genai==0.0.5
-langchain-community==0.0.10
+langchain==0.3.7
+langchain-google-genai==2.0.5
+langchain-community==0.3.7
+langchain-core==0.3.21
+resend==0.6.0
