@@ -7,6 +7,7 @@ from utils.database import db
 from services.gemini_service import gemini_service
 import re
 import mammoth
+from docx_parser_converter.docx_to_html.docx_to_html_converter import DocxToHtmlConverter
 
 
 class DocumentService:
@@ -136,6 +137,40 @@ class DocumentService:
             # Fallback to plain text
             content = document.get("original_content", "")
             return f"<pre style='white-space: pre-wrap; font-family: inherit;'>{content}</pre>"
+
+    def get_completed_document_preview(self, document_id: str) -> str:
+        """
+        Generate HTML preview of the completed document.
+        Uses docx-parser-converter to convert the completed .docx to HTML with formatting preservation.
+        """
+        document = db.get_document(document_id)
+        if not document:
+            raise Exception("Document not found")
+
+        try:
+            # Try to get completed document from storage first
+            completed_file_path = f"{document_id}/completed.docx"
+            try:
+                file_data = db.download_file(self.bucket_completed, completed_file_path)
+                print(f"✓ Using completed document from storage for preview")
+            except Exception:
+                # Completed document not found, generate it on-demand
+                print(f"⚠ Completed document not in storage, generating for preview...")
+                original_file_data = db.download_file(
+                    self.bucket_original,
+                    f"{document_id}/original.docx"
+                )
+                file_data = self.generate_completed_document(document_id, original_file_data)
+
+            # Convert .docx to HTML using docx-parser-converter (preserves formatting/indentation)
+            converter = DocxToHtmlConverter(file_data, use_default_values=True)
+            html_content = converter.convert_to_html()
+
+            return html_content
+
+        except Exception as e:
+            print(f"Error generating completed document preview: {e}")
+            raise Exception(f"Failed to generate preview: {str(e)}")
 
     def generate_completed_document(self, document_id: str, original_file_data: bytes) -> bytes:
         """

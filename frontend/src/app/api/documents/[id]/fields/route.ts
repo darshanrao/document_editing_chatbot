@@ -76,6 +76,7 @@ export async function POST(
       success: data.success,
       nextQuestion: data.nextQuestion,
       nextFieldId: data.nextFieldId,
+      updatedField: data.updatedField,
     });
   } catch (error) {
     console.error('Error updating field:', error);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import CompletedDocumentModal from '@/components/CompletedDocumentModal';
 
 interface DocumentSummary {
   filename: string;
@@ -17,6 +18,7 @@ export default function CompletePage({ params }: { params: Promise<{ id: string 
   const [email, setEmail] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (!documentId) return;
@@ -147,7 +149,7 @@ export default function CompletePage({ params }: { params: Promise<{ id: string 
               )}
             </button>
             <button
-              onClick={() => alert('Preview functionality coming soon!')}
+              onClick={() => setIsPreviewOpen(true)}
               className="px-6 py-4 text-lg bg-dark-panel border-2 border-dark-border text-gray-200 rounded-lg font-medium hover:bg-dark-border transition-colors"
             >
               👁️ Preview Full Document
@@ -191,6 +193,13 @@ export default function CompletePage({ params }: { params: Promise<{ id: string 
           </div>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <CompletedDocumentModal
+        documentId={documentId}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+      />
     </div>
   );
 }

@@ -144,6 +144,24 @@ async def get_document_preview(document_id: str):
     )
 
 
+@router.get("/documents/{document_id}/preview-completed")
+async def get_completed_document_preview(document_id: str):
+    """Get HTML preview of the completed document"""
+    document = db.get_document(document_id)
+
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if document["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Document is not completed yet")
+
+    try:
+        content = document_service.get_completed_document_preview(document_id)
+        return {"content": content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/documents/{document_id}/fields", response_model=FieldSubmitResponse)
 async def submit_field_value(document_id: str, request: FieldSubmitRequest):
     """Submit a value for a field with intelligent extraction and validation"""
