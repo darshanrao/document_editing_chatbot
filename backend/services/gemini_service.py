@@ -13,7 +13,7 @@ class GeminiService:
     def extract_placeholders(self, document_content: str) -> List[Dict[str, any]]:
         """
         Extract placeholders from document content using Gemini.
-        Returns list of fields with name, placeholder, type, and suggested order.
+        Returns list of fields with name, placeholder, type, suggested order, and occurrence_index.
         """
         prompt = f"""You are an expert legal document analyzer. Analyze the following document and identify ALL placeholders that need to be filled in.
 
@@ -58,7 +58,8 @@ IMPORTANT:
                 response_text = response_text.rstrip('`').strip()
 
             fields = json.loads(response_text)
-            return fields
+            # Add occurrence tracking for duplicate placeholders
+            return self._add_occurrence_indices(fields)
 
         except json.JSONDecodeError as e:
             print(f"Error parsing Gemini response: {e}")
@@ -111,7 +112,30 @@ IMPORTANT:
                         "order": len(placeholders) + 1
                     })
 
-        return placeholders
+        # Add occurrence tracking for duplicate placeholders
+        return self._add_occurrence_indices(placeholders)
+
+    def _add_occurrence_indices(self, fields: List[Dict[str, any]]) -> List[Dict[str, any]]:
+        """
+        Add occurrence_index to each field to handle duplicate placeholders.
+        For example, if there are 3 fields with placeholder "[___]", they get indices 0, 1, 2.
+        """
+        # Track occurrence count for each placeholder
+        placeholder_counts = {}
+
+        for field in fields:
+            placeholder = field["placeholder"]
+
+            # Get current occurrence index for this placeholder
+            occurrence_index = placeholder_counts.get(placeholder, 0)
+
+            # Add occurrence_index to field
+            field["occurrence_index"] = occurrence_index
+
+            # Increment count for next occurrence
+            placeholder_counts[placeholder] = occurrence_index + 1
+
+        return fields
 
     def generate_question_for_field(self, field_name: str, field_type: str,
                                     placeholder: str, document_context: str = "") -> str:

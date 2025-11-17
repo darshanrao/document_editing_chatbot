@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS fields (
     type VARCHAR(50) DEFAULT 'text',
     status VARCHAR(50) DEFAULT 'pending',
     "order" INTEGER NOT NULL,
+    occurrence_index INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

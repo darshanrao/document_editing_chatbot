@@ -15,6 +15,23 @@ class DocumentService:
         self.bucket_original = "original-documents"
         self.bucket_completed = "completed-documents"
 
+    def replace_nth_occurrence(self, text: str, placeholder: str, replacement: str, n: int) -> str:
+        """
+        Replace only the Nth occurrence of a placeholder in text.
+        n is 0-indexed (0 = first occurrence, 1 = second occurrence, etc.)
+        """
+        # Split the text by the placeholder
+        parts = text.split(placeholder)
+
+        # If we don't have enough occurrences, return unchanged
+        if len(parts) <= n + 1:
+            return text
+
+        # Join: take all parts before n, add replacement, then all parts after n
+        before = placeholder.join(parts[:n+1])
+        after = placeholder.join(parts[n+1:])
+        return before + replacement + after
+
     def extract_text_from_docx(self, file_data: bytes) -> str:
         """Extract text content from a .docx file"""
         try:
@@ -63,7 +80,8 @@ class DocumentService:
                     name=field_data["name"],
                     placeholder=field_data["placeholder"],
                     field_type=field_data.get("type", "text"),
-                    order=field_data["order"]
+                    order=field_data["order"],
+                    occurrence_index=field_data.get("occurrence_index", 0)
                 )
 
             # Step 4: Update document status to ready
@@ -98,23 +116,24 @@ class DocumentService:
                 result = mammoth.convert_to_html(io.BytesIO(file_data))
                 html_content = result.value
 
-                # Replace placeholders with values
+                # Replace placeholders with values (occurrence-aware)
                 fields = db.get_fields(document_id)
                 for field in fields:
                     placeholder = field["placeholder"]
                     value = field.get("value")
+                    occurrence_index = field.get("occurrence_index", 0)
 
                     if value:
                         # Wrap filled values in a span for styling
-                        html_content = html_content.replace(
-                            placeholder,
-                            f'<span class="filled-field" style="background-color: #d1fae5; color: #047857; padding: 2px 6px; border-radius: 4px; font-weight: 500;">{value}</span>'
+                        replacement = f'<span class="filled-field" style="background-color: #d1fae5; color: #047857; padding: 2px 6px; border-radius: 4px; font-weight: 500;">{value}</span>'
+                        html_content = self.replace_nth_occurrence(
+                            html_content, placeholder, replacement, occurrence_index
                         )
                     else:
                         # Wrap pending placeholders in a span for styling
-                        html_content = html_content.replace(
-                            placeholder,
-                            f'<span class="pending-field" style="background-color: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-weight: 500; border: 1px solid #fbbf24;">{placeholder}</span>'
+                        replacement = f'<span class="pending-field" style="background-color: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-weight: 500; border: 1px solid #fbbf24;">{placeholder}</span>'
+                        html_content = self.replace_nth_occurrence(
+                            html_content, placeholder, replacement, occurrence_index
                         )
 
                 return html_content
@@ -126,8 +145,11 @@ class DocumentService:
                 for field in fields:
                     placeholder = field["placeholder"]
                     value = field.get("value")
+                    occurrence_index = field.get("occurrence_index", 0)
                     if value:
-                        content = content.replace(placeholder, value)
+                        content = self.replace_nth_occurrence(
+                            content, placeholder, value, occurrence_index
+                        )
 
                 # Convert plain text to HTML
                 return f"<pre style='white-space: pre-wrap; font-family: inherit;'>{content}</pre>"
@@ -175,6 +197,7 @@ class DocumentService:
     def generate_completed_document(self, document_id: str, original_file_data: bytes) -> bytes:
         """
         Generate a completed .docx document with all placeholders filled in.
+        Uses occurrence-aware replacement to handle duplicate placeholders correctly.
         Returns the completed document as bytes.
         """
         try:
@@ -182,32 +205,43 @@ class DocumentService:
             doc = Document(io.BytesIO(original_file_data))
             fields = db.get_fields(document_id)
 
-            # Create a mapping of placeholder -> value
-            replacements = {}
+            # Build list of replacements with occurrence tracking
+            replacements = []  # List of (placeholder, value, occurrence_index) tuples
             for field in fields:
                 if field.get("value"):
-                    replacements[field["placeholder"]] = field["value"]
+                    replacements.append({
+                        "placeholder": field["placeholder"],
+                        "value": field["value"],
+                        "occurrence_index": field.get("occurrence_index", 0)
+                    })
 
-            # Replace placeholders in paragraphs
+            # Replace placeholders in paragraphs (occurrence-aware)
             for paragraph in doc.paragraphs:
-                for placeholder, value in replacements.items():
+                for replacement in replacements:
+                    placeholder = replacement["placeholder"]
+                    value = replacement["value"]
+                    occurrence_index = replacement["occurrence_index"]
+
                     if placeholder in paragraph.text:
-                        # Replace in the paragraph
-                        paragraph.text = paragraph.text.replace(placeholder, value)
+                        # Replace only the Nth occurrence of this placeholder
+                        paragraph.text = self.replace_nth_occurrence(
+                            paragraph.text, placeholder, value, occurrence_index
+                        )
 
-                        # Optional: Highlight filled values in yellow
-                        for run in paragraph.runs:
-                            if any(value in run.text for value in replacements.values()):
-                                run.font.highlight_color = None  # Or use RGBColor for background
-
-            # Replace placeholders in tables
+            # Replace placeholders in tables (occurrence-aware)
             for table in doc.tables:
                 for row in table.rows:
                     for cell in row.cells:
                         for paragraph in cell.paragraphs:
-                            for placeholder, value in replacements.items():
+                            for replacement in replacements:
+                                placeholder = replacement["placeholder"]
+                                value = replacement["value"]
+                                occurrence_index = replacement["occurrence_index"]
+
                                 if placeholder in paragraph.text:
-                                    paragraph.text = paragraph.text.replace(placeholder, value)
+                                    paragraph.text = self.replace_nth_occurrence(
+                                        paragraph.text, placeholder, value, occurrence_index
+                                    )
 
             # Save to bytes
             output = io.BytesIO()

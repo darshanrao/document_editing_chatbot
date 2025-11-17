@@ -55,8 +55,8 @@ class Database:
 
     # Field operations
     def create_field(self, document_id: str, name: str, placeholder: str,
-                    field_type: str, order: int) -> Dict[str, Any]:
-        """Create a new field"""
+                    field_type: str, order: int, occurrence_index: int = 0) -> Dict[str, Any]:
+        """Create a new field with occurrence tracking for duplicate placeholders"""
         field_id = str(uuid.uuid4())
         data = {
             "id": field_id,
@@ -65,6 +65,7 @@ class Database:
             "placeholder": placeholder,
             "type": field_type,
             "order": order,
+            "occurrence_index": occurrence_index,
             "status": "pending",
             "created_at": datetime.utcnow().isoformat(),
         }
