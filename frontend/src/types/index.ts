@@ -28,6 +28,7 @@ export interface Field {
   status: FieldStatus;
   order: number;
   type?: FieldType;
+  occurrenceIndex?: number;
 }
 
 export enum FieldStatus {

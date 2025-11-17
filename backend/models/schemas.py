@@ -50,6 +50,7 @@ class Field(FieldBase):
     document_id: str
     value: Optional[str] = None
     status: FieldStatus = FieldStatus.PENDING
+    occurrence_index: int = 0
     created_at: datetime
     updated_at: Optional[datetime] = None
 
