@@ -16,9 +16,7 @@ export default function CompletePage({ params }: { params: Promise<{ id: string 
   const { id: documentId } = use(params);
   const router = useRouter();
   const [summary, setSummary] = useState<DocumentSummary | null>(null);
-  const [email, setEmail] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isSending, setIsSending] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
@@ -62,32 +60,10 @@ export default function CompletePage({ params }: { params: Promise<{ id: string 
     }
   };
 
-  const handleSendEmail = async () => {
-    if (!email) return;
-
-    setIsSending(true);
-    try {
-      const response = await fetch(`/api/documents/${documentId}/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      if (response.ok) {
-        alert('Document sent successfully!');
-        setEmail('');
-      }
-    } catch (error) {
-      console.error('Error sending email:', error);
-      alert('Failed to send email');
-    } finally {
-      setIsSending(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-3xl mx-auto px-6">
+      <div className="w-full max-w-5xl mx-auto px-6">
         {/* Header */}
         <div className="mb-12 text-center">
           <Link 
@@ -101,8 +77,8 @@ export default function CompletePage({ params }: { params: Promise<{ id: string 
         {/* Success Content */}
         <div className="text-center">
           {/* Success Icon */}
-          <div className="w-24 h-24 bg-success-light rounded-full mx-auto mb-6 flex items-center justify-center">
-            <span className="text-5xl">✓</span>
+          <div className="w-24 h-24 bg-success rounded-full mx-auto mb-6 flex items-center justify-center">
+            <span className="text-5xl text-white">✓</span>
           </div>
 
           <h2 className="text-4xl font-bold text-gray-100 mb-4">
@@ -116,17 +92,17 @@ export default function CompletePage({ params }: { params: Promise<{ id: string 
           {summary && (
             <div className="bg-dark-panel border-2 border-dark-border rounded-lg p-6 mb-8 text-left">
               <div className="space-y-4">
-                <div className="flex justify-between items-center pb-4 border-b border-dark-border">
-                  <span className="text-gray-400">Original File:</span>
-                  <span className="font-semibold text-gray-200">{summary.filename}</span>
+                <div className="flex justify-between items-start pb-4 border-b border-dark-border gap-4">
+                  <span className="text-gray-400 flex-shrink-0">Original File:</span>
+                  <span className="font-semibold text-gray-200 break-words text-right flex-1 min-w-0">{summary.filename}</span>
                 </div>
-                <div className="flex justify-between items-center pb-4 border-b border-dark-border">
+                <div className="flex justify-between items-center pb-4 border-b border-dark-border gap-4">
                   <span className="text-gray-400">Fields Completed:</span>
                   <span className="font-semibold text-gray-200">
                     {summary.fieldsCompleted} / {summary.totalFields}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-4">
                   <span className="text-gray-400">Completion Time:</span>
                   <span className="font-semibold text-gray-200">{summary.completionTime}</span>
                 </div>
@@ -167,33 +143,6 @@ export default function CompletePage({ params }: { params: Promise<{ id: string 
             >
               Fill Another Document
             </button>
-          </div>
-
-          {/* Email Option */}
-          <div className="bg-dark-lighter border-l-4 border-primary rounded p-6 text-left">
-            <p className="text-sm mb-4">
-              <strong className="text-primary">📧 Email Option:</strong>
-              <br />
-              <span className="text-gray-400">
-                Would you like to email this completed document to someone?
-              </span>
-            </p>
-            <div className="space-y-3">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="recipient@email.com"
-                className="w-full px-4 py-2 border-2 border-dark-border rounded-lg bg-dark-panel text-gray-200 placeholder-gray-500 focus:outline-none focus:border-primary"
-              />
-              <button
-                onClick={handleSendEmail}
-                disabled={!email || isSending}
-                className="w-full px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSending ? 'Sending...' : 'Send Document'}
-              </button>
-            </div>
           </div>
         </div>
       </div>

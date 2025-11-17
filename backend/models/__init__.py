@@ -20,8 +20,6 @@ from .schemas import (
     FieldSubmitResponse,
     NextQuestionResponse,
     SummaryResponse,
-    EmailRequest,
-    EmailResponse,
     ProcessingTask,
 )
 
@@ -47,7 +45,5 @@ __all__ = [
     "FieldSubmitResponse",
     "NextQuestionResponse",
     "SummaryResponse",
-    "EmailRequest",
-    "EmailResponse",
     "ProcessingTask",
 ]

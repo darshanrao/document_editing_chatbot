@@ -8,8 +8,6 @@ from models import (
     FieldSubmitRequest,
     FieldSubmitResponse,
     SummaryResponse,
-    EmailRequest,
-    EmailResponse,
     DocumentStatus,
 )
 from utils.database import db
@@ -365,77 +363,3 @@ async def download_document(document_id: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate document: {str(e)}")
-
-
-@router.post("/documents/{document_id}/email", response_model=EmailResponse)
-async def email_document(document_id: str, request: EmailRequest):
-    """Email the completed document"""
-    from services.email_service import email_service
-    import re
-    
-    document = db.get_document(document_id)
-
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-    
-    # Validate email format
-    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    if not re.match(email_pattern, request.email):
-        raise HTTPException(status_code=400, detail="Invalid email address")
-    
-    # Check if email service is configured
-    if not email_service.is_configured():
-        raise HTTPException(
-            status_code=503,
-            detail="Email service is not configured. Please contact support or use the download option."
-        )
-
-    try:
-        # Get completed document (same logic as download endpoint)
-        completed_file_path = f"{document_id}/completed.docx"
-        
-        try:
-            # Try to get from storage first
-            completed_doc = db.download_file(
-                document_service.bucket_completed,
-                completed_file_path
-            )
-            print(f"✓ Using completed document from storage for email to {request.email}")
-        except Exception:
-            # Generate on-demand if not in storage
-            print(f"⚠ Generating completed document on-demand for email to {request.email}")
-            original_file_data = db.download_file(
-                document_service.bucket_original,
-                f"{document_id}/original.docx"
-            )
-            completed_doc = document_service.generate_completed_document(
-                document_id,
-                original_file_data
-            )
-            # Try to save for future use (non-blocking)
-            try:
-                await document_service.upload_completed_document(document_id, completed_doc)
-            except Exception as e:
-                print(f"⚠ Warning: Failed to save completed document: {e}")
-
-        # Send email with attachment
-        await email_service.send_document_email(
-            to_email=request.email,
-            document_filename=document['filename'],
-            document_bytes=completed_doc
-        )
-
-        return EmailResponse(
-            success=True,
-            message=f"Document sent successfully to {request.email}"
-        )
-        
-    except HTTPException:
-        # Re-raise HTTP exceptions
-        raise
-    except Exception as e:
-        logger.error(f"Error sending email for document {document_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to send email: {str(e)}"
-        )

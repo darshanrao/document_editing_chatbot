@@ -19,9 +19,6 @@ langchain-google-genai==2.0.10
 langchain-community==0.3.31
 langchain-core==0.3.79
 
-# Email
-resend==2.19.0
-
 # Configuration & Validation
 python-dotenv==1.2.1
 pydantic==2.7.4

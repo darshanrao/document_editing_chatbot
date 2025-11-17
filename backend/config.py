@@ -1,19 +1,21 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 import os
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"  # Ignore extra environment variables (like old email settings)
+    )
+    
     # Supabase Configuration
     SUPABASE_URL: str
     SUPABASE_KEY: str
 
     # Google Gemini AI Configuration
     GEMINI_API_KEY: str
-
-    # Email Configuration (Resend)
-    RESEND_API_KEY: str = ""  # Read from .env - leave empty if email not configured
-    FROM_EMAIL: str = ""  # Read from .env - e.g., "LegalDoc Filler <noreply@yourdomain.com>" or "onboarding@resend.dev"
 
     # Application Configuration
     APP_NAME: str = "LegalDoc Filler Backend"
@@ -32,10 +34,6 @@ class Settings(BaseSettings):
     @property
     def max_file_size_bytes(self) -> int:
         return self.MAX_FILE_SIZE_MB * 1024 * 1024
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 settings = Settings()

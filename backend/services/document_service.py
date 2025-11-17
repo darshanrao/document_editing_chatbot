@@ -118,23 +118,36 @@ class DocumentService:
 
                 # Replace placeholders with values (occurrence-aware)
                 fields = db.get_fields(document_id)
+                print(f"\n=== PREVIEW GENERATION for document {document_id} ===")
+                print(f"Total fields: {len(fields)}")
+
                 for field in fields:
                     placeholder = field["placeholder"]
                     value = field.get("value")
                     occurrence_index = field.get("occurrence_index", 0)
 
+                    print(f"\n--- Field: {field['name']} ---")
+                    print(f"  Placeholder: {placeholder}")
+                    print(f"  Value: {value}")
+                    print(f"  Occurrence Index: {occurrence_index}")
+                    print(f"  Status: {'FILLED' if value else 'PENDING'}")
+
                     if value:
                         # Wrap filled values in a span for styling
                         replacement = f'<span class="filled-field" style="background-color: #d1fae5; color: #047857; padding: 2px 6px; border-radius: 4px; font-weight: 500;">{value}</span>'
+                        print(f"  → Replacing occurrence {occurrence_index} with filled value")
                         html_content = self.replace_nth_occurrence(
                             html_content, placeholder, replacement, occurrence_index
                         )
                     else:
                         # Wrap pending placeholders in a span for styling
                         replacement = f'<span class="pending-field" style="background-color: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-weight: 500; border: 1px solid #fbbf24;">{placeholder}</span>'
+                        print(f"  → Wrapping occurrence {occurrence_index} with pending span")
                         html_content = self.replace_nth_occurrence(
                             html_content, placeholder, replacement, occurrence_index
                         )
+
+                print(f"\n=== PREVIEW GENERATION COMPLETE ===\n")
 
                 return html_content
             else:

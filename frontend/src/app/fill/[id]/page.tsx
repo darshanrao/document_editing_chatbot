@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatPanel from '@/components/ChatPanel';
 import DocumentPreview from '@/components/DocumentPreview';
@@ -23,6 +23,8 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [currentFieldId, setCurrentFieldId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Use ref for stable ID generation to avoid hydration mismatches
+  const messageIdCounter = useRef(0);
 
   // Calculate progress
   const completedFields = fields.filter(f => f.status === FieldStatus.FILLED).length;
@@ -52,8 +54,10 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
           const chatRes = await fetch(`/api/chat/${documentId}/next`);
           if (chatRes.ok) {
             const chatData = await chatRes.json();
+            // Generate stable ID and timestamp only on client side
+            messageIdCounter.current = 1;
             setMessages([{
-              id: '1',
+              id: `msg-${messageIdCounter.current}`,
               role: 'bot',
               content: chatData.question,
               timestamp: new Date().toISOString(),
@@ -86,9 +90,10 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
   const handleSendMessage = async (message: string) => {
     if (!currentFieldId) return;
 
-    // Add user message
+    // Add user message with stable ID
+    messageIdCounter.current += 1;
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `msg-${messageIdCounter.current}`,
       role: 'user',
       content: message,
       timestamp: new Date().toISOString(),
@@ -130,8 +135,9 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
 
         // Get next question
         if (data.nextQuestion) {
+          messageIdCounter.current += 1;
           const botMessage: ChatMessage = {
-            id: (Date.now() + 1).toString(),
+            id: `msg-${messageIdCounter.current}`,
             role: 'bot',
             content: data.nextQuestion,
             timestamp: new Date().toISOString(),
@@ -141,8 +147,9 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
           setCurrentFieldId(data.nextFieldId);
         } else {
           // All done
+          messageIdCounter.current += 1;
           const botMessage: ChatMessage = {
-            id: (Date.now() + 1).toString(),
+            id: `msg-${messageIdCounter.current}`,
             role: 'bot',
             content: 'Great! All fields have been completed. Redirecting to download page...',
             timestamp: new Date().toISOString(),
@@ -163,8 +170,9 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
     setCurrentFieldId(fieldId);
     const field = fields.find(f => f.id === fieldId);
     if (field) {
+      messageIdCounter.current += 1;
       const botMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: `msg-${messageIdCounter.current}`,
         role: 'bot',
         content: `Let's update the ${field.name}. What should the new value be?`,
         timestamp: new Date().toISOString(),
@@ -307,16 +315,6 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
             onFieldFill={handleFieldFill}
           />
         )}
-
-        {/* Pro Tip */}
-        <div className="mt-6 p-4 bg-dark-lighter border-l-4 border-primary rounded">
-          <p className="text-sm">
-            <strong className="text-primary">💡 Pro tip:</strong>{' '}
-            <span className="text-gray-400">
-              You can click on any yellow placeholder in the preview to jump to that field in the conversation.
-            </span>
-          </p>
-        </div>
       </main>
     </div>
   );

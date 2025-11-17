@@ -155,15 +155,6 @@ class SummaryResponse(BaseModel):
     completionTime: str
 
 
-class EmailRequest(BaseModel):
-    email: str
-
-
-class EmailResponse(BaseModel):
-    success: bool
-    message: str
-
-
 # Processing Task Schema
 class ProcessingTaskStatus(str, Enum):
     PENDING = "pending"
