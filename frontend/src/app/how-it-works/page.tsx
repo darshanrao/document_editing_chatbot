@@ -70,8 +70,8 @@ export default function HowItWorksPage() {
                 AI Analyzes Your Document
               </h2>
               <p className="text-gray-400 leading-relaxed mb-4">
-                Our AI assistant quickly scans through your document to identify all the fields 
-                that need to be filled in. This happens automatically—you don't need to do anything. 
+                Our AI assistant quickly scans through your document to identify all the fields
+                that need to be filled in. This happens automatically—you don&apos;t need to do anything.
                 It usually takes just a few seconds.
               </p>
               <div className="bg-dark-lighter border border-dark-border rounded-lg p-4">
@@ -95,8 +95,8 @@ export default function HowItWorksPage() {
                 Have a Conversation
               </h2>
               <p className="text-gray-400 leading-relaxed mb-4">
-                Instead of filling out a complicated form, you'll have a friendly chat with our AI assistant. 
-                It will ask you questions one at a time in natural, conversational language. Just answer 
+                Instead of filling out a complicated form, you&apos;ll have a friendly chat with our AI assistant.
+                It will ask you questions one at a time in natural, conversational language. Just answer
                 as you would to a real person—no need to worry about specific formats or technical terms.
               </p>
               <div className="bg-dark-lighter border border-dark-border rounded-lg p-4 mb-4">
@@ -106,7 +106,7 @@ export default function HowItWorksPage() {
                 <div className="space-y-3 text-sm">
                   <div className="bg-dark-panel p-3 rounded border-l-2 border-primary">
                     <p className="text-gray-300 font-medium mb-1">AI:</p>
-                    <p className="text-gray-400">What's the client's full name?</p>
+                    <p className="text-gray-400">What&apos;s the client&apos;s full name?</p>
                   </div>
                   <div className="bg-dark-panel p-3 rounded border-l-2 border-gray-600">
                     <p className="text-gray-300 font-medium mb-1">You:</p>
@@ -114,7 +114,7 @@ export default function HowItWorksPage() {
                   </div>
                   <div className="bg-dark-panel p-3 rounded border-l-2 border-primary">
                     <p className="text-gray-300 font-medium mb-1">AI:</p>
-                    <p className="text-gray-400">Great! What's the contract start date?</p>
+                    <p className="text-gray-400">Great! What&apos;s the contract start date?</p>
                   </div>
                 </div>
               </div>
@@ -133,14 +133,14 @@ export default function HowItWorksPage() {
                 AI Understands and Validates
               </h2>
               <p className="text-gray-400 leading-relaxed mb-4">
-                The AI understands your answers even if you write them in different ways. It also 
-                checks to make sure everything is in the right format. If something doesn't look right, 
+                The AI understands your answers even if you write them in different ways. It also
+                checks to make sure everything is in the right format. If something doesn&apos;t look right,
                 it will politely ask you to clarify—just like a helpful assistant would.
               </p>
               <div className="bg-dark-lighter border border-dark-border rounded-lg p-4">
                 <p className="text-sm text-gray-400">
-                  <strong className="text-primary">✅ Smart validation:</strong> If you say 
-                  "December 15th, 2024" or "12/15/2024", the AI understands both and formats 
+                  <strong className="text-primary">✅ Smart validation:</strong> If you say
+                  &ldquo;December 15th, 2024&rdquo; or &ldquo;12/15/2024&rdquo;, the AI understands both and formats
                   it correctly for your document.
                 </p>
               </div>
@@ -159,9 +159,9 @@ export default function HowItWorksPage() {
                 See Your Progress
               </h2>
               <p className="text-gray-400 leading-relaxed mb-4">
-                As you answer questions, you can watch your document fill in real-time. A preview 
-                panel shows you exactly how the completed document will look, and a progress bar 
-                keeps track of how many fields you've finished.
+                As you answer questions, you can watch your document fill in real-time. A preview
+                panel shows you exactly how the completed document will look, and a progress bar
+                keeps track of how many fields you&apos;ve finished.
               </p>
             </div>
           </div>
@@ -178,8 +178,8 @@ export default function HowItWorksPage() {
                 Download Your Completed Document
               </h2>
               <p className="text-gray-400 leading-relaxed mb-4">
-                Once all fields are filled, you're done! Download your completed document with all 
-                the information filled in correctly. You can also have it emailed directly to you 
+                Once all fields are filled, you&apos;re done! Download your completed document with all
+                the information filled in correctly. You can also have it emailed directly to you
                 or someone else.
               </p>
               <div className="bg-dark-lighter border border-dark-border rounded-lg p-4">

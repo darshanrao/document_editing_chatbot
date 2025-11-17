@@ -21,6 +21,7 @@ export default function CompletedDocumentModal({
     if (isOpen && documentId) {
       fetchPreview();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, documentId]);
 
   const fetchPreview = async () => {
