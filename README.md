@@ -4,13 +4,13 @@ An AI-powered conversational interface for filling legal document templates. Upl
 
 ## Features
 
-- **Smart Placeholder Detection**: AI automatically identifies all placeholders in your document
-- **Conversational Interface**: Natural language questions guide you through each field
-- **Real-time Preview**: See your document update as you fill it in
-- **Type Validation**: Automatic validation for emails, dates, phone numbers, etc.
-- **Progress Tracking**: Visual progress bar shows completion status
-- **Multiple Views**: Toggle between chat view and field list view
-- **Download & Share**: Download completed document or email it directly
+- **Smart placeholder detection** – Gemini analyses the uploaded `.docx` and finds placeholders.
+- **Conversational field collection** – tailored prompts per field, with retry guidance when validation fails.
+- **Real-time preview** – live document view with placeholders highlighted.
+- **Type-aware validation** – email, phone, dates, currency, numbers, addresses, names.
+- **Progress tracking** – completion bar plus field list status.
+- **Dual views** – switch between chat mode and structured field list.
+- **One-click download** – generate and download the completed Word document.
 
 ## Architecture
 
@@ -24,7 +24,7 @@ This project consists of two main components:
 
 ### Backend (FastAPI)
 - **Location**: `backend/`
-- **Tech Stack**: FastAPI, Python 3.9+, Google Gemini AI, Supabase
+- **Tech Stack**: FastAPI, Python 3.12, Google Gemini 2.5 (Pro + Flash-Lite), Supabase
 - **Services**: Document processing, AI placeholder extraction, conversational filling
 - **Database**: Supabase (PostgreSQL)
 - **Storage**: Supabase Storage
@@ -33,9 +33,9 @@ This project consists of two main components:
 
 ### Prerequisites
 
-- Node.js 18+ (for frontend)
-- Python 3.9+ (for backend)
-- Supabase account
+- Node.js 18+ (frontend)
+- Python 3.12 (backend)
+- Supabase project (database + storage buckets)
 - Google Gemini API key
 
 ### Frontend Setup
@@ -52,9 +52,11 @@ Visit `http://localhost:3000`
 
 ```bash
 cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your credentials
+# Populate .env with SUPABASE_URL, SUPABASE_KEY, GEMINI_API_KEY, ALLOWED_ORIGINS
 python main.py
 ```
 

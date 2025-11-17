@@ -1,235 +1,171 @@
-# Deployment Guide - LegalDoc Filler Frontend
+# Deployment Guide
 
-This guide will help you deploy the LegalDoc Filler frontend to Vercel.
+The project has two deployable surfaces:
 
-## Prerequisites
+- **Frontend**: Next.js app in `frontend/` (deployed to Vercel)
+- **Backend**: FastAPI app in `backend/` (deployed to Railway, Fly.io, or any container-friendly host)
 
-- GitHub account
-- Vercel account (free tier works fine)
-- Git installed locally
+Use this guide end-to-end or jump to the section you need.
 
-## Step 1: Prepare Your Repository
+---
 
-1. **Initialize Git** (if not already done):
+## 1. Prepare the repository
+
 ```bash
-git init
+# from repo root
+git status        # ensure clean working tree
+git pull          # grab latest changes from remote
+```
+
+For CI/CD with Vercel or Railway you must push commits:
+
+```bash
 git add .
-git commit -m "Initial commit: LegalDoc Filler frontend"
+git commit -m "Ready for deployment"
+git push origin main
 ```
 
-2. **Create GitHub Repository**:
-   - Go to GitHub and create a new repository
-   - Don't initialize with README (we already have one)
+---
 
-3. **Push to GitHub**:
+## 2. Frontend → Vercel
+
+### Prerequisites
+
+- Node 18+ locally
+- Vercel account with access to the project
+- Vercel CLI (`npm i -g vercel`) if deploying from the terminal
+
+### Option A – GitHub integration (preferred)
+
+1. Connect your GitHub repo to Vercel (Import Project → select repo).
+2. Configure build settings:
+   - Framework: **Next.js**
+   - Root Directory: `frontend`
+   - Build command: `npm run build`
+   - Install command: `npm install`
+   - Output directory: `.next`
+3. Click **Deploy**. Every push to `main` now triggers a production deployment; other branches get preview URLs automatically.
+
+### Option B – Vercel CLI
+
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-git branch -M main
-git push -u origin main
-```
-
-## Step 2: Deploy to Vercel
-
-### Option A: Vercel CLI (Recommended)
-
-1. **Install Vercel CLI**:
-```bash
-npm install -g vercel
-```
-
-2. **Login to Vercel**:
-```bash
+cd frontend
 vercel login
+vercel            # first-time setup (links project)
+vercel --prod     # triggers production deploy
 ```
 
-3. **Deploy**:
-```bash
-# From the project root
-vercel
+Tips:
+- Always run the CLI from `frontend/`.
+- Use `vercel --prod --force` to bypass cached builds.
+- If asked for project directory, answer `./`.
 
-# Or from the frontend directory
-cd frontend
-vercel
+### Frontend environment variables
+
+Current build does **not** require client-side env vars. When the backend is live set these under Project → Settings → Environment Variables:
+
+```
+NEXT_PUBLIC_API_BASE_URL=https://your-backend.example.com/api
+NEXT_PUBLIC_MAX_FILE_SIZE_MB=10
+NEXT_PUBLIC_ALLOWED_FILE_TYPES=.docx
 ```
 
-4. **Follow the prompts**:
-   - Set up and deploy? **Y**
-   - Which scope? Select your account
-   - Link to existing project? **N**
-   - What's your project's name? `legaldoc-filler`
-   - In which directory is your code located? `./` (or `frontend` if from root)
-   - Want to modify settings? **N**
+After editing env vars click **Redeploy**.
 
-5. **Deploy to Production**:
-```bash
-vercel --prod
-```
+### Verification checklist
 
-### Option B: Vercel Dashboard (Alternative)
+- Run `npm run build && npm start` locally before pushing.
+- After deploy visit the Vercel URL, clear cache/hard refresh.
+- Test upload, chat flow, completion screen, and download.
 
-1. **Go to [vercel.com](https://vercel.com)**
+---
 
-2. **Click "Add New Project"**
+## 3. Backend → Railway (or any container platform)
 
-3. **Import Your GitHub Repository**
+> Detailed commands live in `backend/RAILWAY_DEPLOYMENT.md`. Summary:
 
-4. **Configure Project**:
-   - **Framework Preset**: Next.js
-   - **Root Directory**: `frontend`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `.next`
-   - **Install Command**: `npm install`
+### Prerequisites
 
-5. **Environment Variables** (Optional for future backend):
-   ```
-   NEXT_PUBLIC_API_BASE_URL=/api
-   NEXT_PUBLIC_ENABLE_EMAIL=true
-   NEXT_PUBLIC_ENABLE_DOWNLOAD=true
-   NEXT_PUBLIC_MAX_FILE_SIZE_MB=10
-   NEXT_PUBLIC_ALLOWED_FILE_TYPES=.docx
-   ```
+- Python 3.12 runtime supported by your host.
+- Supabase credentials (URL + service role key).
+- Google Gemini API key.
 
-6. **Click "Deploy"**
-
-## Step 3: Verify Deployment
-
-After deployment completes, Vercel will provide you with:
-- **Production URL**: `https://your-project.vercel.app`
-- **Deployment Status**: Check in Vercel dashboard
-
-Test your deployment:
-1. Visit the production URL
-2. Try uploading a file
-3. Test the conversational flow
-4. Verify all pages work correctly
-
-## Environment Variables Configuration
-
-### Current (Mock Backend)
-The app currently works with mock data and doesn't require any environment variables.
-
-### Future (Real Backend)
-
-When you have a FastAPI backend deployed, set these in Vercel:
+### Steps (Railway example)
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://your-backend-api.com/api/v1
-NEXT_PUBLIC_ENABLE_EMAIL=true
-NEXT_PUBLIC_ENABLE_DOWNLOAD=true
+cd backend
+railway login
+railway init            # create project or link existing
+railway up              # deploy using Dockerfile / Nixpacks
 ```
 
-To add environment variables in Vercel:
-1. Go to your project dashboard
-2. Click on "Settings"
-3. Navigate to "Environment Variables"
-4. Add each variable for Production/Preview/Development as needed
-5. Redeploy for changes to take effect
+Configure env vars inside Railway → Variables tab:
 
-## Continuous Deployment
+```
+SUPABASE_URL=...
+SUPABASE_KEY=...
+GEMINI_API_KEY=...
+ALLOWED_ORIGINS=https://your-frontend.vercel.app,http://localhost:3000
+APP_NAME=LegalDoc Filler Backend
+DEBUG=false
+```
 
-Vercel automatically sets up continuous deployment:
+### Post-deploy
 
-- **Push to `main` branch** → Deploys to production
-- **Push to other branches** → Creates preview deployments
-- **Pull Requests** → Generates preview URLs
+1. Grab the public backend URL.
+2. Update `NEXT_PUBLIC_API_BASE_URL` in Vercel to point to `https://backend-url/api`.
+3. Redeploy the frontend.
 
-## Custom Domain (Optional)
+---
 
-1. Go to your project settings in Vercel
-2. Navigate to "Domains"
-3. Add your custom domain
-4. Follow Vercel's instructions to configure DNS
+## 4. Continuous deployment model
 
-## Monitoring and Analytics
+- **Frontend**: push to `main` → Vercel production deploy. Other branches → Vercel preview.
+- **Backend**: depends on hosting provider (Railway supports GitHub auto-deploys or manual triggers).
 
-Vercel provides:
-- **Analytics**: View pageviews and user metrics
-- **Logs**: Check deployment and runtime logs
-- **Speed Insights**: Monitor page performance
+Use feature branches + PRs to trigger preview environments for both tiers.
 
-Access these from your project dashboard.
+---
 
-## Troubleshooting
+## 5. Troubleshooting
 
-### Build Fails
+| Issue | Checks |
+| --- | --- |
+| Build fails on Vercel | Inspect logs (`Deployments → <build> → Logs`). Ensure `npm run build` succeeds locally. |
+| 404 after deploy | Confirm project root is `frontend`, `vercel.json` exists, routes live under `src/app`. |
+| Frontend not updating | Did you push commits? Run `vercel --prod --force`. Clear browser cache / disable extensions. |
+| Backend CORS errors | `ALLOWED_ORIGINS` must include both local dev (`http://localhost:3000`) and the Vercel domain. |
+| Env vars ignored | They must be set per environment (Production / Preview). Redeploy after edits. |
 
-**Check build logs** in Vercel dashboard:
-- Look for TypeScript errors
-- Verify all dependencies are in `package.json`
-- Ensure `next build` works locally
-
-### Environment Variables Not Working
-
-- Make sure they start with `NEXT_PUBLIC_`
-- Redeploy after adding new variables
-- Check variables are set for correct environment (Production/Preview/Development)
-
-### 404 on Deployment
-
-- Verify `Root Directory` is set to `frontend`
-- Check `vercel.json` configuration
-- Ensure all API routes are in `src/app/api/`
-
-## Rolling Back
-
-If a deployment has issues:
+Rollback:
 
 ```bash
-# List deployments
-vercel ls
-
-# Rollback to previous
-vercel rollback
+vercel ls          # list deployments
+vercel rollback    # promote previous deployment
 ```
 
-Or use the Vercel dashboard:
-1. Go to "Deployments"
-2. Find a working deployment
-3. Click "..." menu
-4. Select "Promote to Production"
+or use the Vercel dashboard → Deployments → "Promote to Production".
 
-## Production Checklist
+---
 
-Before deploying to production:
+## 6. Production checklist
 
-- [ ] Test build locally (`npm run build`)
-- [ ] Verify all environment variables
-- [ ] Test all user flows
-- [ ] Check mobile responsiveness
-- [ ] Review error handling
-- [ ] Test with different file types
-- [ ] Verify loading states
-- [ ] Check accessibility
-- [ ] Test on different browsers
-- [ ] Review security (no exposed secrets)
+- [ ] `npm run build` / `python main.py` succeed locally
+- [ ] All env vars configured in Vercel/Railway
+- [ ] File uploads, chat flow, completion, and download tested
+- [ ] Responsive on desktop & mobile
+- [ ] No console errors in browser
+- [ ] Accessibility quick pass (tab order, color contrast)
+- [ ] Error states/empty states verified
+- [ ] Secrets not committed; `.env` excluded
 
-## Local Production Build
+---
 
-Test production build before deploying:
+## 7. Support & references
 
-```bash
-cd frontend
+- Vercel docs: https://vercel.com/docs
+- Next.js docs: https://nextjs.org/docs
+- Railway docs: https://docs.railway.app/
+- Supabase docs: https://supabase.com/docs
 
-# Build
-npm run build
-
-# Start production server
-npm start
-
-# Test at http://localhost:3000
-```
-
-## Support
-
-- **Vercel Docs**: https://vercel.com/docs
-- **Next.js Docs**: https://nextjs.org/docs
-- **GitHub Issues**: Report issues in your repository
-
-## Next Steps
-
-After frontend deployment:
-1. Deploy FastAPI backend
-2. Update `NEXT_PUBLIC_API_BASE_URL` in Vercel
-3. Configure CORS on backend for your Vercel domain
-4. Test full integration
-5. Set up monitoring and error tracking (e.g., Sentry)
+For deeper backend deployment steps refer to `backend/RAILWAY_DEPLOYMENT.md`. For infrastructure questions reach out to the maintainer in `README.md`.
