@@ -1,4 +1,5 @@
 import FileUpload from '@/components/FileUpload';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -6,16 +7,16 @@ export default function Home() {
       {/* Header */}
       <header className="border-b border-dark-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex justify-between items-center">
-          <div className="text-xl sm:text-2xl font-bold text-primary">
+          <Link 
+            href="/"
+            className="text-xl sm:text-2xl font-bold text-primary hover:opacity-80 transition-opacity cursor-pointer"
+          >
             ⚖️ LegalDoc Filler
-          </div>
+          </Link>
           <nav className="hidden sm:flex gap-6 text-sm text-gray-400">
-            <a href="#how-it-works" className="hover:text-gray-200 transition-colors">
+            <Link href="/how-it-works" className="hover:text-gray-200 transition-colors">
               How it works
-            </a>
-            <a href="#about" className="hover:text-gray-200 transition-colors">
-              About
-            </a>
+            </Link>
           </nav>
         </div>
       </header>

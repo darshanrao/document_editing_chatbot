@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import CompletedDocumentModal from '@/components/CompletedDocumentModal';
 
 interface DocumentSummary {
@@ -89,9 +90,12 @@ export default function CompletePage({ params }: { params: Promise<{ id: string 
       <div className="w-full max-w-3xl mx-auto px-6">
         {/* Header */}
         <div className="mb-12 text-center">
-          <div className="text-2xl font-bold text-primary mb-8">
+          <Link 
+            href="/"
+            className="inline-block text-2xl font-bold text-primary mb-8 hover:opacity-80 transition-opacity cursor-pointer"
+          >
             ⚖️ LegalDoc Filler
-          </div>
+          </Link>
         </div>
 
         {/* Success Content */}

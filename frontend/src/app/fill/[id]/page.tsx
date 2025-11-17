@@ -211,7 +211,12 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
       <div className="min-h-screen flex flex-col">
         <header className="border-b border-dark-border bg-dark-panel">
           <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div className="text-xl font-bold text-primary">⚖️ LegalDoc Filler</div>
+            <button
+              onClick={() => router.push('/')}
+              className="text-xl font-bold text-primary hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              ⚖️ LegalDoc Filler
+            </button>
           </div>
         </header>
         <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
@@ -230,7 +235,12 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
       {/* Header */}
       <header className="border-b border-dark-border bg-dark-panel">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-          <div className="text-lg sm:text-xl font-bold text-primary">⚖️ LegalDoc Filler</div>
+          <button
+            onClick={() => router.push('/')}
+            className="text-lg sm:text-xl font-bold text-primary hover:opacity-80 transition-opacity cursor-pointer"
+          >
+            ⚖️ LegalDoc Filler
+          </button>
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <span className="text-xs sm:text-sm text-gray-400 truncate max-w-[150px] sm:max-w-none">{documentFilename}</span>
             <button
