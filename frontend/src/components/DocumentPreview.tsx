@@ -9,47 +9,10 @@ interface DocumentPreviewProps {
 }
 
 export default function DocumentPreview({ content, fields, onFieldClick }: DocumentPreviewProps) {
-  // Helper function to replace only the Nth occurrence of a placeholder
-  const replaceNthOccurrence = (text: string, placeholder: string, replacement: string, n: number): string => {
-    // Split the text by the placeholder
-    const parts = text.split(placeholder);
-
-    // If we don't have enough occurrences, return unchanged
-    if (parts.length <= n + 1) {
-      return text;
-    }
-
-    // Join: take all parts before n, add replacement, then all parts after n
-    const before = parts.slice(0, n + 1).join(placeholder);
-    const after = parts.slice(n + 1).join(placeholder);
-    return before + replacement + after;
-  };
-
-  // Function to render content with highlighted placeholders
+  // Backend already handles occurrence-aware replacement with styled spans
+  // Just render the HTML content as-is from the backend
   const renderContent = () => {
-    let renderedContent = content;
-
-    // Replace placeholders with styled spans (occurrence-aware)
-    fields.forEach((field) => {
-      const placeholder = field.placeholder;
-      const value = field.value || placeholder;
-      const occurrenceIndex = field.occurrenceIndex ?? 0;
-      const className = field.status === FieldStatus.FILLED
-        ? 'bg-success-light text-success-dark px-1.5 py-0.5 rounded font-medium cursor-pointer hover:bg-success/30'
-        : 'bg-pending-light text-pending-dark px-1.5 py-0.5 rounded font-medium border border-pending cursor-pointer hover:bg-pending/30';
-
-      const onClick = onFieldClick ? `onclick="handleFieldClick('${field.id}')"` : '';
-
-      // Replace only the Nth occurrence of this placeholder
-      renderedContent = replaceNthOccurrence(
-        renderedContent,
-        placeholder,
-        `<span class="${className}" ${onClick}>${value}</span>`,
-        occurrenceIndex
-      );
-    });
-
-    return renderedContent;
+    return content;
   };
 
   return (
