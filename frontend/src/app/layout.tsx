@@ -1,5 +1,19 @@
 import type { Metadata } from "next";
+import { Roboto_Condensed, Inter } from "next/font/google";
 import "./globals.css";
+
+const robotoCondensed = Roboto_Condensed({
+  weight: '700',
+  subsets: ['latin'],
+  variable: '--font-roboto-condensed',
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "LegalDoc Filler - AI-Powered Legal Document Assistant",
@@ -12,7 +26,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   viewport: "width=device-width, initial-scale=1",
-  themeColor: "#a78bfa",
+  themeColor: "#B58BFF",
 };
 
 export default function RootLayout({
@@ -22,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className={`${inter.variable} ${robotoCondensed.variable} antialiased`}>
         {children}
       </body>
     </html>

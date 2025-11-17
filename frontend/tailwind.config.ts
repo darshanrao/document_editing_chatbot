@@ -11,9 +11,15 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        bodyText: "var(--body-text)",
+        secondaryText: "var(--secondary-text)",
+        borderLight: "var(--border)",
         primary: {
-          DEFAULT: '#a78bfa',
-          dark: '#7c3aed',
+          DEFAULT: '#B58BFF',
+          dark: '#9F6BFF',
+        },
+        activeTab: {
+          DEFAULT: '#9F6BFF',
         },
         pending: {
           DEFAULT: '#fbbf24',
@@ -26,11 +32,16 @@ const config: Config = {
           dark: '#065f46',
         },
         dark: {
-          bg: '#1a1d23',
+          bg: '#1C1D20',
           panel: '#2a2e35',
-          border: '#3a3f47',
+          border: '#E5E5E5',
           lighter: '#1f2228',
         }
+      },
+      fontFamily: {
+        'roboto-condensed': ['var(--font-roboto-condensed)', 'sans-serif'],
+        'inter': ['var(--font-inter)', 'sans-serif'],
+        'legal': ['Times New Roman', 'Times', 'serif'],
       },
     },
   },

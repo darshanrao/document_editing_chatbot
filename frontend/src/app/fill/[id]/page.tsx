@@ -268,8 +268,8 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
             onClick={() => setViewMode('chat')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               viewMode === 'chat'
-                ? 'bg-primary text-white'
-                : 'bg-dark-panel border border-dark-border text-gray-400 hover:text-gray-200'
+                ? 'bg-activeTab text-white'
+                : 'bg-dark-panel border border-dark-border text-secondaryText hover:text-foreground'
             }`}
           >
             Chat View
@@ -278,8 +278,8 @@ export default function FillPage({ params }: { params: Promise<{ id: string }> }
             onClick={() => setViewMode('fields')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               viewMode === 'fields'
-                ? 'bg-primary text-white'
-                : 'bg-dark-panel border border-dark-border text-gray-400 hover:text-gray-200'
+                ? 'bg-activeTab text-white'
+                : 'bg-dark-panel border border-dark-border text-secondaryText hover:text-foreground'
             }`}
           >
             Field List

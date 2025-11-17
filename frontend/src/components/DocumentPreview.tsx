@@ -44,7 +44,7 @@ export default function DocumentPreview({ content, fields, onFieldClick }: Docum
       {/* Document Content */}
       <div className="flex-1 overflow-y-auto p-8 bg-white">
         <div
-          className="max-w-3xl mx-auto font-serif leading-relaxed text-gray-900"
+          className="max-w-3xl mx-auto font-legal leading-relaxed text-gray-900"
           dangerouslySetInnerHTML={{ __html: renderContent() }}
         />
       </div>
